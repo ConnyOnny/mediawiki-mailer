@@ -1,0 +1,13 @@
+#!/usr/bin/python3
+
+# this should not be imported
+assert __name__ == '__main__'
+
+from email.parser import Parser as MailParser
+from sys import stdin
+
+parser = MailParser()
+message = parser.parse(stdin)
+
+print(message.get_payload())
+print(message.get_all("To"))
