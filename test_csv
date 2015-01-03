@@ -1,3 +1,8 @@
+#!/usr/bin/python3
+
+# this should not be imported
+assert __name__ == '__main__'
+
 import table
 
 with table.openWriter("test.csv") as writer:
