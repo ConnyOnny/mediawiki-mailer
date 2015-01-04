@@ -18,6 +18,6 @@ def get_users(article):
 		return set()
 	users = set()
 	for match in _user_scanner_re.finditer(html):
-		user = match.group(1)
+		user = match.group(1).replace('_',' ')
 		users.add(user)
 	return users

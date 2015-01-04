@@ -18,13 +18,11 @@ def extract_mail (s):
 
 def get_lists (msg):
 	regexp = re.compile(conf.mailing_list_regex)
-	# you could write this whole loop as a single statement with
-	# map and filter
-	return list(filter(regexp.fullmatch, map(extract_mail, itertools.chain(msg.get_all("To",[]), msg.get_all("Cc",[])))))
+	return list(filter(regexp.match, map(extract_mail, itertools.chain(msg.get_all("To",[]), msg.get_all("Cc",[])))))
 
 def get_article_name (listadr):
 	regexp = re.compile(conf.mailing_list_regex)
-	match = regexp.fullmatch(listadr)
+	match = regexp.match(listadr)
 	if not match:
 		raise ValueError('"%s" is not a mailing list address' % listadr)
 	return match.group(1)

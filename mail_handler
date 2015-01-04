@@ -1,10 +1,10 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3.3
 
 # this should not be imported
 assert __name__ == '__main__'
 
 # assure we are in the right directory, so we find our relative imports
-import os.path.dirname, os.chdir
+import os
 print(os.path.dirname(__file__))
 os.chdir(os.path.dirname(__file__))
 
@@ -14,7 +14,7 @@ from sys import stdin
 
 # relative imports
 import mailer
-import table
+import mysqltable
 import wikicrawl
 
 # read message from stdin
@@ -33,7 +33,7 @@ for l in lists:
 print("Users:", users)
 
 # lookup mail addresses for the destination users
-mailTable = table.MailTable("mail_table.csv")
+mailTable = mysqltable.MailTable()
 usermails = list(map(mailTable.get_mail, users))
 
 print("Mailadrs:", usermails)
