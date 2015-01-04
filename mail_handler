@@ -1,33 +1,44 @@
 #!/usr/bin/python3
 
+# this should not be imported
 assert __name__ == '__main__'
 
+# assure we are in the right directory, so we find our relative imports
+import os.path.dirname, os.chdir
+print(os.path.dirname(__file__))
+os.chdir(os.path.dirname(__file__))
+
+# library imports
 from email.parser import Parser as MailParser
 from sys import stdin
 
+# relative imports
 import mailer
 import table
 import wikicrawl
 
+# read message from stdin
 message = MailParser().parse(stdin)
 
+# get mailing list addresses in To and Cc fields
 lists = mailer.get_lists(message)
 
 print("Lists:", lists)
 
+# crawl the wiki to get the destination people
 users = set()
-
 for l in lists:
 	users |= wikicrawl.get_users(mailer.get_article_name(l))
 
 print("Users:", users)
 
+# lookup mail addresses for the destination users
 mailTable = table.MailTable("mail_table.csv")
-
 usermails = list(map(mailTable.get_mail, users))
 
 print("Mailadrs:", usermails)
 
+# for the unsubscribe button
 mailer.add_listinfo(message)
 
 mailer.send_mail(message, usermails)
