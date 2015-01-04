@@ -1,0 +1,35 @@
+#!/usr/bin/python3
+
+assert __name__ == '__main__'
+
+from email.parser import Parser as MailParser
+from sys import stdin
+
+import mailer
+import table
+import wikicrawl
+
+message = MailParser().parse(stdin)
+
+lists = mailer.get_lists(message)
+
+print("Lists:", lists)
+
+users = set()
+
+for l in lists:
+	users |= wikicrawl.get_users(mailer.get_article_name(l))
+
+print("Users:", users)
+
+mailTable = table.MailTable("mail_table.csv")
+
+usermails = list(map(mailTable.get_mail, users))
+
+print("Mailadrs:", usermails)
+
+mailer.add_listinfo(message)
+
+mailer.send_mail(message, usermails)
+
+print("Done.")

@@ -70,9 +70,9 @@ class MailTable:
 			for row in r:
 				self._name_to_mail[row["name"]] = row["email"]
 				self._mail_to_name[row["email"]] = row["name"]
-	def getMail(self,name):
+	def get_mail(self,name):
 		return self._name_to_mail[name]
-	def getName(self,email):
+	def get_name(self,email):
 		return self._mail_to_name[email]
 	def __iter__(self):
 		return _MailTableIterator(self)

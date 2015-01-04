@@ -22,6 +22,16 @@ def get_lists (msg):
 	# map and filter
 	return list(filter(regexp.fullmatch, map(extract_mail, itertools.chain(msg.get_all("To",[]), msg.get_all("Cc",[])))))
 
+def get_article_name (listadr):
+	regexp = re.compile(conf.mailing_list_regex)
+	match = regexp.fullmatch(listadr)
+	if not match:
+		raise ValueError('"%s" is not a mailing list address' % listadr)
+	return match.group(1)
+
+def add_listinfo (msg):
+	msg.add_header("List-Unsubscribe","<mailto:thunis-postmaster@peacock.uberspace.de>")
+
 def send_mail (msg, destinations):
 	with smtplib.SMTP(conf.smtp_server, conf.smtp_port) as s:
 		s.starttls()
