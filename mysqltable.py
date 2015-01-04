@@ -3,16 +3,17 @@ import cymysql
 import conf
 
 class MailTable:
-	def __init__(self,filename):
+	def __init__(self):
 		self._conn = cymysql.connect(host=conf.mysql_server, user=conf.mysql_user, passwd=conf.mysql_password, db=conf.mysql_database, charset='utf8')
 	def get_mail(self,name):
 		cur = self._conn.cursor()
-		rows = cur.execute("select user_email from user where user_name = \"%s\"", (name,))
-		assert rows == 0 or rows == 1
-		if rows == 0:
+		cur.execute("select user_email from user where user_name = %s", (name,))
+		rows = cur.fetchall()
+		assert len(rows) == 0 or len(rows) == 1
+		if len(rows) == 0:
 			return None
 		else:
-			return cur.fetchone()[0]
+			return rows[0][0].decode('utf-8')
 	def get_name(self,email):
 		raise NotImplemented()
 	def __iter__(self):
