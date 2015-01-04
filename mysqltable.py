@@ -11,7 +11,7 @@ class MailTable:
 		assert rows == 0 or rows == 1
 		if rows == 0:
 			return None
-		else rows == 0:
+		else:
 			return cur.fetchone()[0]
 	def get_name(self,email):
 		raise NotImplemented()
