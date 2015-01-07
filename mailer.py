@@ -30,9 +30,13 @@ def get_article_name (listadr):
 def add_listinfo (msg):
 	msg.add_header("List-Unsubscribe","<mailto:thunis-postmaster@peacock.uberspace.de>")
 
-def send_mail (msg, destinations):
+def send_mails (l):
 	with smtplib.SMTP(conf.smtp_server, conf.smtp_port) as s:
 		s.starttls()
 		s.ehlo()
 		s.login(conf.smtp_user, conf.smtp_password)
-		s.sendmail(conf.smtp_srcadr, destinations, msg.as_string().encode('utf-8'))
+		for msg, destinations in l:
+			s.send_message(msg, conf.smtp_srcadr, destinations)
+
+def send_mail (msg, destinations):
+	send_mails([msg, destinations])

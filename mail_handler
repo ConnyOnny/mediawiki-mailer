@@ -9,7 +9,7 @@ print(os.path.dirname(__file__))
 os.chdir(os.path.dirname(__file__))
 
 # library imports
-from email.parser import Parser as MailParser
+from email.parser import BytesParser as MailParser
 from sys import stdin
 
 # relative imports
@@ -18,7 +18,7 @@ import mysqltable
 import wikicrawl
 
 # read message from stdin
-message = MailParser().parse(stdin)
+message = MailParser().parse(stdin.buffer)
 
 # get mailing list addresses in To and Cc fields
 lists = mailer.get_lists(message)
