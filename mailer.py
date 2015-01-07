@@ -35,4 +35,4 @@ def send_mail (msg, destinations):
 		s.starttls()
 		s.ehlo()
 		s.login(conf.smtp_user, conf.smtp_password)
-		s.send_message(msg, conf.smtp_srcadr, destinations)
+		s.sendmail(conf.smtp_srcadr, destinations, msg.as_string().encode('utf-8'))
