@@ -1,0 +1,21 @@
+#!/usr/bin/env python3.3
+
+import smtplib
+from email.mime.text import MIMEText
+
+import mailer
+
+mails = []
+
+with open("../seafile.csv","r") as f:
+	for line in f:
+		pos = line.find(',')
+		mail = line[:pos]
+		pw = line[pos+1:]
+		msg=MIMEText(pw)
+		msg['Subject'] = 'Thunis Uberspace Passwort'
+		msg['From'] = 'thunis-hostmaster@peacock.uberspace.de'
+		msg['To'] = mail
+		mails.append((msg,[mail]))
+
+mailer.send_mails(mails)
