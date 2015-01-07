@@ -10,7 +10,7 @@ def get_utf8(url):
 	response = urllib.request.urlopen(url)
 	return response.read().decode("utf-8")
 
-_user_scanner_re = re.compile('<a href="/wiki/index.php\?title=Benutzer:([^"]+?)"')
+_user_scanner_re = re.compile('<a href="/wiki/index.php\?title=Benutzer:([^"&]+?)[&"]')
 def get_users(article):
 	try:
 		html = get_utf8(conf.article_lookup_url % article)
