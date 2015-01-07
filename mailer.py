@@ -20,6 +20,10 @@ def get_lists (msg):
 	regexp = re.compile(conf.mailing_list_regex)
 	return list(filter(regexp.match, map(extract_mail, itertools.chain(msg.get_all("To",[]), msg.get_all("Cc",[])))))
 
+def get_users (msg):
+	regexp = re.compile(conf.individual_mail_regex)
+	return list(filter(regexp.match, map(extract_mail, itertools.chain(msg.get_all("To",[]), msg.get_all("Cc",[])))))
+
 def get_article_name (listadr):
 	regexp = re.compile(conf.mailing_list_regex)
 	match = regexp.match(listadr)

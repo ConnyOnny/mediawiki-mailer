@@ -25,8 +25,13 @@ lists = mailer.get_lists(message)
 
 print("Lists:", lists)
 
+# get people in To and Cc fields
+direct_users = map(lambda x:x.title(), mailer.get_users(message))
+
+print("Direct users:", direct_users)
+
 # crawl the wiki to get the destination people
-users = set()
+users = set(direct_users)
 for l in lists:
 	users |= wikicrawl.get_users(mailer.get_article_name(l))
 
