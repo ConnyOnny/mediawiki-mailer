@@ -16,23 +16,23 @@ def extract_mail (s):
 		# change nothing and hope for the best
 		return s
 
+def _get_by_regex (msg, regexp):
+	matching = []
+	for adr in itertools.chain(msg.get_all("To",[]), msg.get_all("Cc",[])):
+		adr = extract_mail(adr)
+		match = regexp.match(adr)
+		if match:
+			matching.append(match.group(1))
+	return matching
+
 def get_lists (msg):
-	regexp = re.compile(conf.mailing_list_regex)
-	return list(filter(regexp.match, map(extract_mail, itertools.chain(msg.get_all("To",[]), msg.get_all("Cc",[])))))
+	return _get_by_regex(msg,re.compile(conf.mailing_list_regex))
 
 def get_users (msg):
-	regexp = re.compile(conf.individual_mail_regex)
-	return list(filter(regexp.match, map(extract_mail, itertools.chain(msg.get_all("To",[]), msg.get_all("Cc",[])))))
-
-def get_article_name (listadr):
-	regexp = re.compile(conf.mailing_list_regex)
-	match = regexp.match(listadr)
-	if not match:
-		raise ValueError('"%s" is not a mailing list address' % listadr)
-	return match.group(1)
+	return _get_by_regex(msg,re.compile(conf.individual_mail_regex))
 
 def add_listinfo (msg):
-	msg.add_header("List-Unsubscribe","<mailto:thunis-postmaster@peacock.uberspace.de>")
+	msg.add_header("List-Unsubscribe",conf.unsubscribe_header)
 
 def send_mails (l):
 	with smtplib.SMTP(conf.smtp_server, conf.smtp_port) as s:
@@ -43,4 +43,4 @@ def send_mails (l):
 			s.send_message(msg, conf.smtp_srcadr, destinations)
 
 def send_mail (msg, destinations):
-	send_mails([msg, destinations])
+	send_mails([(msg, destinations)])

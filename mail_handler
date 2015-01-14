@@ -33,7 +33,7 @@ print("Direct users:", direct_users)
 # crawl the wiki to get the destination people
 users = set(direct_users)
 for l in lists:
-	users |= wikicrawl.get_users(mailer.get_article_name(l))
+	users |= wikicrawl.get_users(l)
 
 print("Users:", users)
 
