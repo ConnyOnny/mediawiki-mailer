@@ -26,7 +26,7 @@ lists = mailer.get_lists(message)
 print("Lists:", lists)
 
 # get people in To and Cc fields
-direct_users = map(lambda x:x.title().replace('_',' '), mailer.get_users(message))
+direct_users = mailer.get_users(message)
 
 print("Direct users:", direct_users)
 

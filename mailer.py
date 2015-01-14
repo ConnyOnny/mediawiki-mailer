@@ -25,11 +25,17 @@ def _get_by_regex (msg, regexp):
 			matching.append(match.group(1))
 	return matching
 
+def _adr_unescape(adr):
+	adr = adr.lower()
+	for unic,repl in conf.character_substitutions:
+		adr = adr.replace(repl,unic)
+	return adr
+
 def get_lists (msg):
-	return _get_by_regex(msg,re.compile(conf.mailing_list_regex))
+	return _adr_unescape(_get_by_regex(msg,re.compile(conf.mailing_list_regex)))
 
 def get_users (msg):
-	return _get_by_regex(msg,re.compile(conf.individual_mail_regex))
+	return _adr_unescape(_get_by_regex(msg,re.compile(conf.individual_mail_regex)))
 
 def add_listinfo (msg):
 	msg.add_header("List-Unsubscribe",conf.unsubscribe_header)
