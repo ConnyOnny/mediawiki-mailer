@@ -96,3 +96,6 @@ try:
 except Exception as e:
 	logger.critical("Failed to send mail.")
 	fail()
+
+logger.debug("mail sent.")
+exit(0)
