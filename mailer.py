@@ -2,8 +2,12 @@ import smtplib
 import conf
 import re
 import itertools
+import my_logging
+
+logger = my_logging.getLogger(__name__)
 
 _extractor_match_ltgt = re.compile("^[^<>]*<([^<>@]+@[^<>@]+)>$")
+_match_mail = re.compile("[^<>@]+@[^<>@]+")
 def extract_mail (s):
 	"""
 	name <mail@example.com> => mail@example.com
@@ -12,7 +16,10 @@ def extract_mail (s):
 	match = _extractor_match_ltgt.match(s)
 	if match:
 		return match.group(1)
+	elif _match_mail.match(s):
+		return s
 	else:
+		logger.warning('Could not verify email address "%s"'%s)
 		# change nothing and hope for the best
 		return s
 
@@ -32,10 +39,10 @@ def _adr_unescape(adr):
 	return adr
 
 def get_lists (msg):
-	return map(_adr_unescape,_get_by_regex(msg,re.compile(conf.mailing_list_regex)))
+	return list(map(_adr_unescape,_get_by_regex(msg,re.compile(conf.mailing_list_regex))))
 
 def get_users (msg):
-	return map(_adr_unescape,_get_by_regex(msg,re.compile(conf.individual_mail_regex)))
+	return list(map(_adr_unescape,_get_by_regex(msg,re.compile(conf.individual_mail_regex))))
 
 def add_listinfo (msg):
 	msg.add_header("List-Unsubscribe",conf.unsubscribe_header)

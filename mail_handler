@@ -5,47 +5,94 @@ assert __name__ == '__main__'
 
 # assure we are in the right directory, so we find our relative imports
 import os
-print(os.path.dirname(__file__))
 os.chdir(os.path.dirname(__file__))
 
 # library imports
 from email.parser import BytesParser as MailParser
-from sys import stdin
+from sys import stdin, exit
+import atexit
+from logging import shutdown as logging_shutdown
 
 # relative imports
 import mailer
 import mysqltable
 import wikicrawl
+import conf
+import my_logging
+
+message = None
+
+def mailstr(mail):
+	return """##################################################
+%s
+##################################################""" % mail.as_string()
+
+def fail():
+	logger.critical(mailstr(message))
+	exit(conf.exit_fail_code)
+
+# setup logging
+atexit.register(logging_shutdown)
+logger = my_logging.getLogger(__name__)
 
 # read message from stdin
-message = MailParser().parse(stdin.buffer)
+try:
+	message = MailParser().parse(stdin.buffer)
+except Exception as e:
+	logger.critical("Could not read mail from stdin",exc_info=True,stack_info=True)
+	fail()
 
-# get mailing list addresses in To and Cc fields
-lists = mailer.get_lists(message)
-
-print("Lists:", lists)
-
-# get people in To and Cc fields
-direct_users = mailer.get_users(message)
-
-print("Direct users:", direct_users)
+try:
+	# get mailing list addresses in To and Cc fields
+	lists = mailer.get_lists(message)
+	logger.debug("Destination mailing lists: %s" % str(list(lists)))
+	# get people in To and Cc fields
+	direct_users = mailer.get_users(message)
+	logger.debug("Direct destination users: %s" % str(list(lists)))
+except Exception as e:
+	logger.error("Error when analysing destinations in this mail:\n%s"%mailstr(message),exc_info=True,stack_info=True)
+	# don't exit, still try to send it to the other users
 
 # crawl the wiki to get the destination people
 users = set(direct_users)
-for l in lists:
-	users |= wikicrawl.get_users(l)
-
-print("Users:", users)
+try:
+	for l in lists:
+		users |= wikicrawl.get_users(l)
+except Exception as e:
+	logger.error("Error when getting users from the wiki for this mail:\n%s"%mailstr(message),exc_info=True,stack_info=True)
+logger.debug("Destination users: %s" % str(users))
 
 # lookup mail addresses for the destination users
-mailTable = mysqltable.MailTable()
-usermails = list(map(mailTable.get_mail, users))
+usermails = []
+try:
+	mailTable = mysqltable.MailTable()
+	usermails = list(map(mailTable.get_mail, users))
+	logger.debug("Destination addresses: %s" % str(usermails))
+except Exception as e:
+	logger.error("Could not lookup email addresses in wiki database for this mail:\n%s"%mailstr(message),exc_info=True,stack_info=True)
 
-print("Mailadrs:", usermails)
+# check that we found email addresses for all destinations
+for mail,user in zip(usermails,users):
+	if not mail:
+		s = 'Unknown user addressed: "%s"'%user
+		if user in direct_users:
+			logger.info(s)
+		else:
+			logger.error('Unknown user addressed: "%s"'%user)
+usermails = list(filter(lambda x:x,usermails))
+
+if len(usermails) == 0:
+	logger.info("Mail has no valid destinations")
+	exit(conf.exit_fail_code)
 
 # for the unsubscribe button
-mailer.add_listinfo(message)
+try:
+	mailer.add_listinfo(message)
+except Exception as e:
+	logger.error("failed to add listinfo for this mail\n%s"%mailstr(message),exc_info=True,stack_info=True)
 
-mailer.send_mail(message, usermails)
-
-print("Done.")
+try:
+	mailer.send_mail(message, usermails)
+except Exception as e:
+	logger.critical("Failed to send mail.")
+	fail()

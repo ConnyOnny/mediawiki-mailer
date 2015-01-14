@@ -1,6 +1,9 @@
 import cymysql
+import my_logging
 
 import conf
+
+logger = my_logging.getLogger(__name__)
 
 class MailTable:
 	def __init__(self):
