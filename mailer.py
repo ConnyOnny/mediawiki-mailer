@@ -32,10 +32,10 @@ def _adr_unescape(adr):
 	return adr
 
 def get_lists (msg):
-	return _adr_unescape(_get_by_regex(msg,re.compile(conf.mailing_list_regex)))
+	return map(_adr_unescape,_get_by_regex(msg,re.compile(conf.mailing_list_regex)))
 
 def get_users (msg):
-	return _adr_unescape(_get_by_regex(msg,re.compile(conf.individual_mail_regex)))
+	return map(_adr_unescape,_get_by_regex(msg,re.compile(conf.individual_mail_regex)))
 
 def add_listinfo (msg):
 	msg.add_header("List-Unsubscribe",conf.unsubscribe_header)
