@@ -39,7 +39,8 @@ def get_users (msg):
 	return list(map(_adr_unescape,_get_first_group_if_match(addresses,re.compile(conf.individual_mail_regex))))
 
 def add_listinfo (msg):
-	msg.add_header("List-Unsubscribe",conf.unsubscribe_header)
+	if conf.add_listinfo:
+		msg.add_header("List-Unsubscribe",conf.unsubscribe_header)
 
 def send_mails (l):
 	with smtplib.SMTP(conf.smtp_server, conf.smtp_port) as s:
