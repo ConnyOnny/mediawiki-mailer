@@ -37,6 +37,10 @@ logger = my_logging.getLogger(__name__)
 
 logger.debug("Starting mail handling as user %d in group %d"%(os.geteuid(),os.getgid()))
 
+# these may be None, if we are not called by qmail
+real_sender = os.getenv("SENDER")
+real_recipient = os.getenv("RECIPIENT")
+
 # read message from stdin
 try:
 	message = MailParser().parse(stdin.buffer)
