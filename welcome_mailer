@@ -9,12 +9,14 @@ os.chdir(os.path.dirname(__file__))
 
 import smtplib
 from email.mime.text import MIMEText
+from email.header import Header
 from sys import stdin
 import atexit
 from logging import shutdown as logging_shutdown
 
 import mailer
 import my_logging
+import conf
 
 atexit.register(logging_shutdown)
 logger = my_logging.getLogger('welcome_mailer')
@@ -24,12 +26,11 @@ logger.debug("Starting welcome mailer as user %d in group %d"%(os.geteuid(),os.g
 mails = []
 
 for line in stdin:
-	pos = line.find(',')
-	mail = line[:pos]
-	pw = line[pos+1:]
-	msg=MIMEText(pw)
-	msg['Subject'] = 'Thunis Uberspace Passwort'
-	msg['From'] = 'thunis-hostmaster@peacock.uberspace.de'
+	mail,pw,name = line.strip().split(',')
+	valuedict = {'emailadr':mail,'password':pw,'name':name}
+	msg=MIMEText(conf.welcome_mail_body % valuedict)
+	msg['Subject'] = Header(conf.welcome_mail_subject % valuedict)
+	msg['From'] = Header(conf.welcome_mail_from % valuedict)
 	msg['To'] = mail
 	mails.append((msg,[mail]))
 
