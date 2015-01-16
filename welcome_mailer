@@ -12,6 +12,12 @@ from email.mime.text import MIMEText
 from sys import stdin
 
 import mailer
+import my_logging
+
+atexit.register(logging_shutdown)
+logger = my_logging.getLogger('welcome_mailer')
+
+logger.debug("Starting welcome mailer as user %d in group %d"%(os.geteuid(),os.getgid()))
 
 mails = []
 

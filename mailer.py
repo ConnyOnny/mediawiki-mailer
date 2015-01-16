@@ -43,11 +43,13 @@ def add_listinfo (msg):
 		msg.add_header("List-Unsubscribe",conf.unsubscribe_header)
 
 def send_mails (l):
+	logger.debug("Initiating sending of mails.")
 	with smtplib.SMTP(conf.smtp_server, conf.smtp_port) as s:
 		s.starttls()
 		s.ehlo()
 		s.login(conf.smtp_user, conf.smtp_password)
 		for msg, destinations in l:
+			logger.debug("sending a mail to these recipients: %s"%str(destinations))
 			s.send_message(msg, conf.smtp_srcadr, destinations)
 
 def send_mail (msg, destinations):
