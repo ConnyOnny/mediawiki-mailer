@@ -10,6 +10,8 @@ os.chdir(os.path.dirname(__file__))
 import smtplib
 from email.mime.text import MIMEText
 from sys import stdin
+import atexit
+from logging import shutdown as logging_shutdown
 
 import mailer
 import my_logging
