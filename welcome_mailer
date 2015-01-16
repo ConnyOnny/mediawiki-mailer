@@ -1,4 +1,11 @@
-#!/usr/bin/env python3.3
+#!/usr/bin/env python3
+
+# this should not be imported
+assert __name__ == '__main__'
+
+# assure we are in the right directory, so we find our relative imports
+import os
+os.chdir(os.path.dirname(__file__))
 
 import smtplib
 from email.mime.text import MIMEText
