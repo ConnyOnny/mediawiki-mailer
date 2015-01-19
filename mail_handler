@@ -21,14 +21,19 @@ import conf
 import my_logging
 
 message = None
+real_sender = None
+real_recipient = None
 
-def mailstr(mail):
+def mailstr():
 	return """##################################################
+SMTP From: %s
+SMTP TO:   %s
+##################################################
 %s
-##################################################""" % mail.as_string()
+##################################################""" % (real_sender, real_recipient, message.as_string())
 
 def fail():
-	logger.critical(mailstr(message))
+	logger.critical(mailstr())
 	exit(conf.exit_fail_code)
 
 # setup logging
@@ -48,7 +53,7 @@ except Exception as e:
 	logger.critical("Could not read mail from stdin",exc_info=True,stack_info=True)
 	fail()
 
-logger.debug("Processing mail:\n%s"%mailstr(message))
+logger.debug("Processing mail:\n%s"%mailstr())
 
 lists = []
 direct_users = []
@@ -60,7 +65,7 @@ try:
 	direct_users = mailer.get_users(message)
 	logger.debug("Direct destination users: %s" % str(list(lists)))
 except Exception as e:
-	logger.error("Error when analysing destinations in this mail:\n%s"%mailstr(message),exc_info=True,stack_info=True)
+	logger.error("Error when analysing destinations in this mail:\n%s"%mailstr(),exc_info=True,stack_info=True)
 	# don't exit, still try to send it to the other users
 
 # crawl the wiki to get the destination people
@@ -69,7 +74,7 @@ try:
 	for l in lists:
 		users |= wikicrawl.get_users(l)
 except Exception as e:
-	logger.error("Error when getting users from the wiki for this mail:\n%s"%mailstr(message),exc_info=True,stack_info=True)
+	logger.error("Error when getting users from the wiki for this mail:\n%s"%mailstr(),exc_info=True,stack_info=True)
 logger.debug("Destination users: %s" % str(users))
 
 # lookup mail addresses for the destination users
@@ -79,7 +84,7 @@ try:
 	usermails = list(map(mailTable.get_mail, users))
 	logger.debug("Destination addresses: %s" % str(usermails))
 except Exception as e:
-	logger.error("Could not lookup email addresses in wiki database for this mail:\n%s"%mailstr(message),exc_info=True,stack_info=True)
+	logger.error("Could not lookup email addresses in wiki database for this mail:\n%s"%mailstr(),exc_info=True,stack_info=True)
 
 # check that we found email addresses for all destinations
 for mail,user in zip(usermails,users):
@@ -99,7 +104,7 @@ if len(usermails) == 0:
 try:
 	mailer.add_listinfo(message)
 except Exception as e:
-	logger.error("failed to add listinfo for this mail\n%s"%mailstr(message),exc_info=True,stack_info=True)
+	logger.error("failed to add listinfo for this mail\n%s"%mailstr(),exc_info=True,stack_info=True)
 
 try:
 	mailer.send_mail(message, usermails)
