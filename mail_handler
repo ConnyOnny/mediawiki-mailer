@@ -93,7 +93,7 @@ for mail,user in zip(usermails,users):
 		if user in direct_users:
 			logger.info(s)
 		else:
-			logger.error('Unknown user addressed: "%s"'%user)
+			logger.error(s)
 usermails = list(filter(lambda x:x,usermails))
 
 if len(usermails) == 0:
