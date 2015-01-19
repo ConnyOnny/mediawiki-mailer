@@ -22,7 +22,7 @@ def get_article_source(article):
 	article = urllib.parse.quote(article)
 	return get_utf8(conf.article_lookup_url % article)
 
-_user_scanner_re = re.compile('<a href="/wiki/index.php\?title=Benutzer:([^"&]+?)[&"]')
+_user_scanner_re = re.compile(conf.user_re)
 def get_users(article):
 	article = article.lower()
 	for unic,repl in conf.character_substitutions:
