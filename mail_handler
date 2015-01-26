@@ -69,36 +69,73 @@ except Exception as e:
 	# don't exit, still try to send it to the other users
 
 # crawl the wiki to get the destination people
-users = set(direct_users)
+lists_to_users = dict()
 try:
 	for l in lists:
-		users |= wikicrawl.get_users(l)
+		lists_to_users[l] = wikicrawl.get_users(l)
 except Exception as e:
-	logger.error("Error when getting users from the wiki for this mail:\n%s"%mailstr(),exc_info=True,stack_info=True)
-logger.debug("Destination users: %s" % str(users))
+	logger.error("Error when getting users for list %s from the wiki for this mail:\n%s"%(l,mailstr()),exc_info=True,stack_info=True)
 
 # lookup mail addresses for the destination users
-usermails = []
+direct_mails = []
+lists_to_mails = dict()
 try:
 	mailTable = mysqltable.MailTable()
-	usermails = list(map(mailTable.get_mail, users))
-	logger.debug("Destination addresses: %s" % str(usermails))
+	direct_mails = list(map(mailTable.get_mail, users))
+	for l,usr in lists_to_users.items():
+		lists_to_mails[l] = list(map(mailTable.get_mail, users))
 except Exception as e:
 	logger.error("Could not lookup email addresses in wiki database for this mail:\n%s"%mailstr(),exc_info=True,stack_info=True)
 
-# check that we found email addresses for all destinations
-for mail,user in zip(usermails,users):
-	if not mail:
-		s = 'Unknown user addressed: "%s"'%user
-		if user in direct_users:
-			logger.info(s)
-		else:
-			logger.error(s)
-usermails = list(filter(lambda x:x,usermails))
+explicit_mails = mailer.get_mail_destination_addresses(message)
+candidate_destinations = set(direct_mails)
+for mails in lists_to_mails.values():
+	candidate_destinations |= mails
+try:
+	# maybe an address could not be found for everybody
+	candidate_destinations.remove(None)
+except KeyError:
+	pass
 
-if len(usermails) == 0:
+if len(candidate_destinations) == 0:
 	logger.info("Mail has no valid destinations")
 	exit(conf.exit_fail_code)
+
+def _invert_dict(d):
+	ret = dict()
+	for k,vl in d.items():
+		for v in vl:
+			ret.setdefault(v,[]).append(k)
+	return ret
+
+mails_to_lists = _invert_dict(lists_to_mails)
+
+actual_destinations = []
+for dst in candidate_destinations:
+	if dst in explicit_mails:
+		# user was also directly addressed, outside of our system
+		pass
+	elif dst in direct_mails:
+		# user was addressed by xxx-user-name...
+		if real_recipient == dst:
+			actual_destinations.append(dst)
+		else:
+			# we will be or have been called another time for this mail
+			pass
+	else:
+		# user was addressed by one or more mailing list(s)
+		users_lists = sorted(mails_to_lists.get(dst,[]))
+		if len(users_lists) == 0:
+			# it's a bug if this happens
+			logger.critical("Destination %s was in the destination candidates but seems not addressed by this mail:\n%s"%(dst,mailstr()))
+			continue
+		if real_recipient == users_lists[0]:
+			# because users_lists is sorted and we compare only to the first element
+			# the mail will only be sent to the user once
+			actual_destinations.append(dst)
+		else:
+			# we will be or have been called another time for this mail
+			pass
 
 # for the unsubscribe button
 try:
@@ -107,7 +144,7 @@ except Exception as e:
 	logger.error("failed to add listinfo for this mail\n%s"%mailstr(),exc_info=True,stack_info=True)
 
 try:
-	mailer.send_mail(message, usermails)
+	mailer.send_mail(message, actual_destinations)
 except Exception as e:
 	logger.critical("Failed to send mail.")
 	fail()
