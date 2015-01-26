@@ -19,6 +19,7 @@ import mysqltable
 import wikicrawl
 import conf
 import my_logging
+import logging
 
 message = None
 real_sender = None
@@ -63,7 +64,7 @@ try:
 	logger.debug("Destination mailing lists: %s" % str(list(lists)))
 	# get people in To and Cc fields
 	direct_users = mailer.get_users(message)
-	logger.debug("Direct destination users: %s" % str(list(lists)))
+	logger.debug("Direct destination users: %s" % str(list(direct_users)))
 except Exception as e:
 	logger.error("Error when analysing destinations in this mail:\n%s"%mailstr(),exc_info=True,stack_info=True)
 	# don't exit, still try to send it to the other users
@@ -72,7 +73,9 @@ except Exception as e:
 lists_to_users = dict()
 try:
 	for l in lists:
-		lists_to_users[l] = wikicrawl.get_users(l)
+		_tmp = wikicrawl.get_users(l)
+		lists_to_users[l] = _tmp
+		logger.debug("List '%s' has members: %s"%(l,", ".join(_tmp)))
 except Exception as e:
 	logger.error("Error when getting users for list %s from the wiki for this mail:\n%s"%(l,mailstr()),exc_info=True,stack_info=True)
 
@@ -81,16 +84,21 @@ direct_mails = []
 lists_to_mails = dict()
 try:
 	mailTable = mysqltable.MailTable()
-	direct_mails = list(map(mailTable.get_mail, users))
-	for l,usr in lists_to_users.items():
-		lists_to_mails[l] = list(map(mailTable.get_mail, users))
+	direct_mails = list(map(mailTable.get_mail, direct_users))
+	logger.debug("direct_mails: %s"%", ".join(direct_mails))
+	for l,_users in lists_to_users.items():
+		_tmp = list(map(mailTable.get_mail, _users))
+		lists_to_mails[l] = _tmp
+		logger.debug("List '%s' has member mails: %s"%(l,", ".join(_tmp)))
 except Exception as e:
 	logger.error("Could not lookup email addresses in wiki database for this mail:\n%s"%mailstr(),exc_info=True,stack_info=True)
 
 explicit_mails = mailer.get_mail_destination_addresses(message)
+logger.debug("explicit_mails: %s"%str(explicit_mails))
 candidate_destinations = set(direct_mails)
 for mails in lists_to_mails.values():
-	candidate_destinations |= mails
+	candidate_destinations |= set(mails)
+logger.debug("candidate_destinations: %s"%str(candidate_destinations))
 try:
 	# maybe an address could not be found for everybody
 	candidate_destinations.remove(None)
@@ -109,17 +117,23 @@ def _invert_dict(d):
 	return ret
 
 mails_to_lists = _invert_dict(lists_to_mails)
+if logger.isEnabledFor(logging.DEBUG):
+	for m,ls in mails_to_lists.items():
+		logger.debug("Email %s appears in the following lists: %s"%(m,", ".join(ls)))
 
 actual_destinations = []
 for dst in candidate_destinations:
+	logger.debug("eliminating duplicates for %s."%dst)
 	if dst in explicit_mails:
-		# user was also directly addressed, outside of our system
+		logger.debug("%s was also directly addressed, outside of our system"%dst)
 		pass
 	elif dst in direct_mails:
-		# user was addressed by xxx-user-name...
-		if real_recipient == dst:
+		logger.debug("%s was addressed by xxx-user-name..."%dst)
+		if mailTable.get_mail(mailer.strip(real_recipient)) == dst:
+			logger.debug("real_recipient %s matches dst %s"%(real_recipient,dst))
 			actual_destinations.append(dst)
 		else:
+			logger.debug("real_recipient %s does not match dst %s"%(real_recipient,dst))
 			# we will be or have been called another time for this mail
 			pass
 	else:
@@ -129,13 +143,19 @@ for dst in candidate_destinations:
 			# it's a bug if this happens
 			logger.critical("Destination %s was in the destination candidates but seems not addressed by this mail:\n%s"%(dst,mailstr()))
 			continue
-		if real_recipient == users_lists[0]:
+		if mailer.strip(real_recipient) == users_lists[0]:
 			# because users_lists is sorted and we compare only to the first element
 			# the mail will only be sent to the user once
+			logger.debug("send mail because of list %s"%real_recipient)
 			actual_destinations.append(dst)
 		else:
+			logger.debug("not sending mail now because %s != %s"%(mailer.strip(real_recipient),users_lists[0]))
 			# we will be or have been called another time for this mail
 			pass
+
+if len(actual_destinations) == 0:
+	logger.debug("No actual destinations.")
+	exit(0)
 
 # for the unsubscribe button
 try:

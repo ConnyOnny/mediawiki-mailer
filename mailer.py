@@ -30,6 +30,14 @@ def _adr_unescape(adr):
 		adr = adr.replace(repl,unic)
 	return adr
 
+def strip(adr):
+	ret = adr
+	for r in [conf.mailing_list_regex, conf.individual_mail_regex]:
+		match = re.match(r,ret)
+		if match:
+			ret = match.group(1)
+	return ret
+
 def get_lists (msg):
 	addresses = get_mail_destination_addresses(msg)
 	return list(map(_adr_unescape,_get_first_group_if_match(addresses,re.compile(conf.mailing_list_regex))))
