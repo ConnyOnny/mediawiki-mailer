@@ -121,6 +121,10 @@ if logger.isEnabledFor(logging.DEBUG):
 	for m,ls in mails_to_lists.items():
 		logger.debug("Email %s appears in the following lists: %s"%(m,", ".join(ls)))
 
+def canonify_subst(s):
+	for c,subst in conf.character_substitutions:
+		s = s.replace(subst,c)
+
 actual_destinations = []
 for dst in candidate_destinations:
 	logger.debug("eliminating duplicates for %s."%dst)
@@ -129,7 +133,7 @@ for dst in candidate_destinations:
 		pass
 	elif dst in direct_mails:
 		logger.debug("%s was addressed by xxx-user-name..."%dst)
-		if mailTable.get_mail(mailer.strip(real_recipient)) == dst:
+		if canonify_subst(mailTable.get_mail(mailer.strip(real_recipient))) == canonify_subst(dst):
 			logger.debug("real_recipient %s matches dst %s"%(real_recipient,dst))
 			actual_destinations.append(dst)
 		else:
@@ -143,7 +147,7 @@ for dst in candidate_destinations:
 			# it's a bug if this happens
 			logger.critical("Destination %s was in the destination candidates but seems not addressed by this mail:\n%s"%(dst,mailstr()))
 			continue
-		if mailer.strip(real_recipient) == users_lists[0]:
+		if canonify_subst(mailer.strip(real_recipient)) == canonify_subst(users_lists[0]):
 			# because users_lists is sorted and we compare only to the first element
 			# the mail will only be sent to the user once
 			logger.debug("send mail because of list %s"%real_recipient)
