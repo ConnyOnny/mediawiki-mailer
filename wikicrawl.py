@@ -20,7 +20,7 @@ def get_utf8(url):
 
 def get_article_source(article):
 	article = urllib.parse.quote(article)
-	return get_utf8(conf.article_lookup_url % article)
+	return get_utf8(conf.article_lookup_url+urllib.parse.urlencode({"title":article}))
 
 _user_scanner_re = re.compile(conf.user_re)
 def get_users(article):
